@@ -12,6 +12,32 @@ def put_index_metadata(client, index_name, index_meta):
     client.refresh(index_name)
 
 
+def copy_index_metadata(client, src_index, dest_index):
+    index_meta = get_index_metadata(client, src_index)
+    put_index_metadata(client, dest_index, index_meta)
+
+
+def alias_index(client, alias_name, index_name):
+    settings = {
+        "actions": [
+            {"add": {"index": index_name,
+                     "alias": alias_name}}
+        ]
+    }
+    client.update_aliases(settings)
+
+
+def move_alias(client, alias_name, index_name):
+    old_index_name = client.aliases(alias_name).keys()[0]
+    settings = {
+        "actions": [
+            {"remove": {"index": old_index_name, "alias": alias_name}},
+            {"add": {"index": index_name, "alias": alias_name}},
+        ]
+    }
+    client.update_aliases(settings)
+
+
 def write_index_metadata(index_meta, filename):
     with open(filename, 'w') as f:
         json.dump(index_meta, f, indent=4,
@@ -23,7 +49,7 @@ def read_index_metadata(filename):
         index_meta = json.load(f)
 
 
-def copy_documents(client, src_index, dest_index, progress_fn=None):
+def copy_documents(client, src_index, dest_index, progress_fn=None, transform=None):
     total = client.count('*', index=src_index)['count']
     sofar = 0
 
@@ -33,6 +59,8 @@ def copy_documents(client, src_index, dest_index, progress_fn=None):
     for page in iter_documents(client, src_index):
         lines = []
         for hit in page:
+            if transform:
+                hit = transform(hit)
             action = {"index": {
                 "_index": dest_index,
                 "_type": hit['_type'],
