@@ -2,9 +2,20 @@ import json
 
 
 def get_index_metadata(client, index_name):
+    # In case of alias, get actual index name
+    real_index_name = client.aliases(index_name).keys()[0]
+
     settings = client.get_settings(index_name)
     mappings = client.get_mapping(index_name)
-    return {'settings': settings[index_name]['settings'], 'mappings': mappings[index_name]}
+
+    for remkey in ('index.uuid', 'index.version.created'):
+        if remkey in settings:
+            del settings[remkey]
+
+    index_meta = {'settings': settings[real_index_name]['settings'],
+                  'mappings': mappings[real_index_name]}
+
+    return index_meta
 
 
 def put_index_metadata(client, index_name, index_meta):

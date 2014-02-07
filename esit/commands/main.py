@@ -146,6 +146,17 @@ def migrate(client, args):
     utils.move_alias(client, src, dest)
 
 
+@_command
+def point(client, args):
+    """
+    Move an alias from its current index to the specified one
+
+    Usage: esit point <alias> <dest_index>
+    """
+    src, dest = args['<alias>'], args['<dest_index>']
+    utils.move_alias(client, src, dest)
+
+
 def _commands():
     max_name_len = 0
     commands = []
