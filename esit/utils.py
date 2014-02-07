@@ -57,7 +57,7 @@ def write_index_metadata(index_meta, filename):
 
 def read_index_metadata(filename):
     with open(filename, 'r') as f:
-        index_meta = json.load(f)
+        return json.load(f)
 
 
 def copy_documents(client, src_index, dest_index, progress_fn=None, transform=None):
