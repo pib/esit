@@ -22,6 +22,7 @@ from docopt import docopt
 from pyelasticsearch import ElasticSearch
 from textwrap import dedent
 from .common import COMMANDS
+from . import alias, crud, experiment, migrate
 
 
 def _commands():

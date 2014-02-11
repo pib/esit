@@ -1,4 +1,5 @@
 import json
+from pyelasticsearch.exceptions import ElasticHttpNotFoundError
 
 
 def get_index_metadata(client, index_name):
@@ -39,7 +40,12 @@ def alias_index(client, alias_name, index_name):
 
 
 def move_alias(client, alias_name, index_name):
-    old_index_name = client.aliases(alias_name).keys()[0]
+    try:
+        old_index_name = client.aliases(alias_name).keys()[0]
+    except ElasticHttpNotFoundError:
+        alias_index(client, alias_name, index_name)
+        return
+
     settings = {
         "actions": [
             {"remove": {"index": old_index_name, "alias": alias_name}},
@@ -58,6 +64,21 @@ def write_index_metadata(index_meta, filename):
 def read_index_metadata(filename):
     with open(filename, 'r') as f:
         return json.load(f)
+
+
+def index_documents(client, index_name, documents):
+    lines = []
+    for doc in documents:
+        action = {"index": {
+            "_index": index_name,
+            "_type": doc['_type'],
+            "_id": doc['_id'],
+        }}
+        lines.append(json.dumps(action))
+        lines.append(json.dumps(doc['_source']))
+
+    body = '\n'.join(lines) + '\n'
+    client.send_request('POST', ['_bulk'], body, encode_body=False)
 
 
 def copy_documents(client, src_index, dest_index, progress_fn=None, transform=None):

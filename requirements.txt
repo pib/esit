@@ -1,3 +1,4 @@
 docopt==0.6.1
 pyelasticsearch==0.6.1
 progress==1.2
+jinja2==2.7.2

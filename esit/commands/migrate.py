@@ -11,7 +11,11 @@ def migrate(client, args):
     """
     Run a migration script to update an aliased index.
 
-    Usage: esit migrate <alias> <migrate_script>
+    Usage: esit migrate <alias> <migrate_script> [options]
+
+    Options:
+      -c, --create  Create a new index, rather than migrating an existing one.
+      -t, --test    Don't point the alias to the new index.
 
     This command will create a new index, copy all the docs from the
     existing index pointed to by <alias> (optionally transforming them
@@ -28,6 +32,9 @@ def migrate(client, args):
                           an argument and returns a possibly-modified dict.
                           This can be used when changes which can't be handled
                           by simply reindexing are done.
+      documents           (optional) List of documents to insert into the
+                          newly-migrated index. They should be in the same
+                          format of the "hits" list of an ES search.
 
     """
     migrate_mod_path = os.path.abspath(args['<migrate_script>'])
@@ -38,5 +45,12 @@ def migrate(client, args):
 
     utils.put_index_metadata(client, dest, migrate_mod.index_metadata)
     transform = getattr(migrate_mod, 'transform_document', None)
-    copy_docs(client, src, dest, transform=transform)
-    utils.move_alias(client, src, dest)
+
+    if not args['--create']:
+        copy_docs(client, src, dest, transform=transform)
+
+    if hasattr(migrate_mod, 'documents'):
+        utils.index_documents(client, dest, migrate_mod.documents)
+
+    if not args['--test']:
+        utils.move_alias(client, src, dest)
