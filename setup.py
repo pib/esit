@@ -31,7 +31,10 @@ setup(
     package_dir={'esit': 'esit'},
     include_package_data=True,
     install_requires=[
-        "docopt",
+        'docopt',
+        'pyelasticsearch',
+        'progress',
+        'jinja2',
     ],
     license="BSD",
     zip_safe=False,
