@@ -26,7 +26,7 @@ setup(
     author_email='paul@marketvibe.com',
     url='https://github.com/MarketVibe/esit',
     packages=[
-        'esit',
+        'esit', 'esit.commands',
     ],
     package_dir={'esit': 'esit'},
     include_package_data=True,
