@@ -11,10 +11,7 @@ def wrap(client, args):
     """
     src, dest = args['<src_index>'], args['<dest_index>']
 
-    utils.copy_index_metadata(client, src, dest)
-    copy_docs(client, src, dest)
-    client.delete_index(src)
-    utils.alias_index(client, src, dest)
+    utils.wrap_index(src, dest)
 
 
 @command
@@ -26,3 +23,15 @@ def point(client, args):
     """
     src, dest = args['<alias>'], args['<dest_index>']
     utils.move_alias(client, src, dest)
+
+
+@command
+def info(client, args):
+    """
+    Get general information about a given index or alias.
+
+    Usage: esit info <index>
+    """
+    index_name = args['<index>']
+    index_info = utils.index_info(client, index_name)
+    print index_info

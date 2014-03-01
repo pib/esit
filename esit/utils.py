@@ -39,6 +39,17 @@ def alias_index(client, alias_name, index_name):
     client.update_aliases(settings)
 
 
+def index_info(client, index_name):
+    return client.aliases(index_name)
+
+
+def wrap_index(client, src, dest, progress_fn=None, transform=None):
+    copy_index_metadata(client, src, dest)
+    copy_documents(client, src, dest, progress_fn, transform)
+    client.delete_index(src)
+    alias_index(client, src, dest)
+
+
 def move_alias(client, alias_name, index_name):
     try:
         old_index_name = client.aliases(alias_name).keys()[0]
