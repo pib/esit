@@ -90,7 +90,13 @@ def upgrade(client, args):
     index_mod = imp.load_source('index_mod', index_mod_path)
 
     alias = args['<alias>']
-    current_index = client.aliases(alias).keys()[0]
+    try:
+        current_index = client.aliases(alias).keys()[0]
+    except ElasticHttpNotFoundError:
+        current_index = index_mod.initial_index
+        client.create_index(index_mod.initial_index)
+        client.refresh(current_index)
+        utils.alias_index(client, alias, current_index)
 
     if current_index == alias:
         current_index = index_mod.initial_index

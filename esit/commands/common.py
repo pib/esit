@@ -14,12 +14,14 @@ def progress_funcs():
 
     def update_progress(sofar, total):
         bar.max = total
-        bar.goto(sofar)
+        if total != 0:
+            bar.goto(sofar)
 
     def finish():
         bar.message = "done (took %(elapsed_td)s) %(percent).0f%%"
-        bar.update()
-        bar.finish()
+        if bar.max != 0:
+            bar.update()
+            bar.finish()
 
     return update_progress, finish
 
