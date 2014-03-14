@@ -5,6 +5,7 @@ from pyelasticsearch.exceptions import ElasticHttpNotFoundError
 import datetime
 import imp
 import os.path
+import re
 
 
 @command
@@ -63,7 +64,7 @@ def upgrade(client, args):
     """
     Run migrations to update to the latest version.
 
-    Usage: esit upgrade <alias> <migrate_dir>
+    Usage: esit upgrade <migrate_dir>
 
     This command is mostly equivalent to running the migrate command
     for each migration script in the migrate directory, with some
@@ -72,34 +73,77 @@ def upgrade(client, args):
     There should be a file named index.py in the migrate directory
     with the following module-level variables:
 
-      initial_index   For initial runs, if there is an index with the
-                      name of the target alias, copy it to this index
-                      and point the alias to this index before doing
-                      the actual migrations
+      aliases             A dict mapping alias names to dicts containing:
 
-      latest          The name of the most recent index which migrations
-                      will lead to. Once this index exists and is pointed
-                      to by the alias, the upgrade is done.
+          alias_pattern   (optional) A regex pattern to use in discovering
+                          aliases to run migrations on.
 
-      transitions     A dict with keys equal to an index name and the
-                      values being the script which will migrate from that
-                      index to the next one.
+          initial_index   For initial runs, if there is an index with the
+                          name of the target alias, copy it to this index
+                          and point the alias to this index before doing
+                          the actual migrations. {alias} can be used to
+                          generate distinct index names when alias_pattern
+                          is used.
+
+          latest          The name of the most recent index which migrations
+                          will lead to. Once this index exists and is pointed
+                          to by the alias, the upgrade is done. {alias} can be
+                          used to generate distinct index names when
+                          alias_pattern is used.
+
+          transitions     A dict with keys equal to an index name and the
+                          values being the script which will migrate from that
+                          index to the next one. {alias} can be used to
+                          generate distinct index names when alias_pattern
+                          is used.
     """
     migrate_dir = os.path.abspath(args['<migrate_dir>'])
     index_mod_path = os.path.join(migrate_dir, 'index.py')
     index_mod = imp.load_source('index_mod', index_mod_path)
 
-    alias = args['<alias>']
-    try:
-        current_index = client.aliases(alias).keys()[0]
-    except ElasticHttpNotFoundError:
-        current_index = index_mod.initial_index
-        client.create_index(index_mod.initial_index)
-        client.refresh(current_index)
-        utils.alias_index(client, alias, current_index)
+    current_aliases = get_current_aliases(client)
+    for alias, conf in index_mod.aliases.items():
+        alias_re = re.compile(
+            conf.get('alias_pattern', '^{}$'.format(alias)))
+        match_found = False
+        for alias_name, index_name in current_aliases.items():
+            if alias_re.match(alias_name):
+                match_found = True
+                upgrade_index(
+                    client, alias_name, index_name, conf, migrate_dir)
+        if not match_found and 'alias_pattern' not in conf:
+            # Create initial index for non-pattern aliases
+            create_initial_index(client, alias, conf['initial_index'])
+            upgrade_index(client, alias, conf[
+                          'initial_index'], conf, migrate_dir)
 
-    if current_index == alias:
-        current_index = index_mod.initial_index
+
+def get_current_aliases(client):
+    """ Returns a dict of all aliases currently in elasticsearch and
+    the indexes they point to """
+    aliases = {}
+    for name, index in client.aliases().items():
+        index_aliases = index['aliases'].keys()
+        if len(index_aliases) == 0:
+            aliases[name] = name
+        else:
+            aliases[index_aliases[0]] = name
+    return aliases
+
+
+def create_initial_index(client, alias, index):
+    client.create_index(index)
+    client.refresh(index)
+    utils.alias_index(client, alias, index)
+
+
+def upgrade_index(client, alias, current_index, conf, migrate_dir):
+    """ upgrade the specified alias to the latest version specified in
+    conf
+    """
+    if alias == current_index:
+        current_index = conf['initial_index'].format(alias=alias)
+        print alias, '->', current_index
         progress, finish = progress_funcs()
         try:
             utils.wrap_index(client, alias, current_index, progress)
@@ -107,10 +151,11 @@ def upgrade(client, args):
         finally:
             finish()
 
-    while current_index != index_mod.latest:
-        print current_index, '->', index_mod.transitions[current_index]
-        migrate_script = os.path.join(
-            migrate_dir, index_mod.transitions[current_index])
+    transitions = format_transitions(alias, conf['transitions'])
+    latest = conf['latest'].format(alias=alias)
+    while current_index != latest:
+        print current_index, '->', transitions[current_index]
+        migrate_script = os.path.join(migrate_dir, transitions[current_index])
         migrate(client, {
             '<migrate_script>': migrate_script,
             '<alias>': alias,
@@ -119,3 +164,7 @@ def upgrade(client, args):
         })
         client.refresh(alias)
         current_index = client.aliases(alias).keys()[0]
+
+
+def format_transitions(alias, transitions):
+    return {k.format(alias=alias): v for k, v in transitions.items()}

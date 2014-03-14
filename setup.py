@@ -19,7 +19,7 @@ history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 setup(
     name='esit',
-    version='0.1.1',
+    version='0.1.2',
     description='ElasticSearch Index Tools. Tools for duplicating, migrating, and experimenting with changes to ElasticSearch indexes and mappings.',
     long_description=readme + '\n\n' + history,
     author='Paul Bonser',
