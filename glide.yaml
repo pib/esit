@@ -1,0 +1,6 @@
+parent: null
+package: github.com/pib/esit
+import:
+- package: github.com/belogik/goes
+- package: github.com/onsi/ginkgo
+- package: github.com/onsi/gomega
