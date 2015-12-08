@@ -31,6 +31,9 @@ func DropAllTransformer(d *goes.Document) []*goes.Document {
 }
 
 func compositeMigration(migrations []Migration) *Migration {
+	if len(migrations) == 1 {
+		return &migrations[0]
+	}
 	last := migrations[len(migrations)-1]
 	return &Migration{
 		FromIndex:        migrations[0].FromIndex,
