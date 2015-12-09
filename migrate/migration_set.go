@@ -6,6 +6,7 @@ type MigrationSet struct {
 	Migrations []Migration
 }
 
+// Run figures out which migrations from the set need to be run and runs them.
 func (s *MigrationSet) Run(c Connection) error {
 	var firstToRun int
 
@@ -25,8 +26,13 @@ func (s *MigrationSet) Run(c Connection) error {
 		}
 	}
 
-	composite := compositeMigration(s.Migrations[firstToRun:])
+	lastM := s.Migrations[len(s.Migrations)-1]
+	if exists, err := c.IndicesExist([]string{lastM.ToIndex}); err != nil {
+		return err
+	} else if exists {
+		return nil // Last index exists, so no migration is needed.
+	}
 
-	Migrate(c, composite)
-	return nil
+	composite := compositeMigration(s.Migrations[firstToRun:])
+	return Migrate(c, composite)
 }

@@ -31,11 +31,10 @@ func Migrate(c Connection, m *Migration) error {
 	}
 
 	c.ForEach(map[string]interface{}{"match_all": map[string]string{}}, []string{m.FromIndex}, nil, func(doc *goes.Document) error {
-		doc.Index = m.ToIndex
-		doc.BulkCommand = "index"
-
 		newDocs := m.Transform(doc)
 		for _, newDoc := range newDocs {
+			newDoc.Index = m.ToIndex
+			newDoc.BulkCommand = "index"
 			if _, err := c.Index(*newDoc, nil); err != nil {
 				return err
 			}

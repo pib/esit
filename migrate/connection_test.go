@@ -23,15 +23,21 @@ func (m *mockCalls) call(args ...interface{}) []interface{} {
 }
 
 type mockConnection struct {
-	indicesExistCalls mockCalls
-	createIndexCalls  mockCalls
-	indexCalls        mockCalls
-	forEachCalls      mockCalls
+	indicesExistCalls  mockCalls
+	createIndexCalls   mockCalls
+	indexCalls         mockCalls
+	forEachCalls       mockCalls
+	customIndicesExist func(indices []string) (bool, error)
 }
 
 var _ migrate.Connection = &mockConnection{} // Check that mockConnection implements migrate.Connection
 
 func (c *mockConnection) IndicesExist(indices []string) (bool, error) {
+	if c.customIndicesExist != nil {
+		exists, err := c.customIndicesExist(indices)
+		c.indicesExistCalls.calls = append(c.indicesExistCalls.calls, []interface{}{indices})
+		return exists, err
+	}
 	ret := c.indicesExistCalls.call(indices)
 	return ret[0].(bool), errOrNil(ret[1])
 }
