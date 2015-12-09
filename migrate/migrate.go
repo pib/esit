@@ -30,7 +30,7 @@ func Migrate(c Connection, m *Migration) error {
 		return nil
 	}
 
-	c.ForEach(map[string]interface{}{"match_all": map[string]string{}}, []string{m.FromIndex}, nil, func(doc *goes.Document) error {
+	c.ForEach(map[string]interface{}{"query": map[string]interface{}{"match_all": map[string]string{}}}, []string{m.FromIndex}, nil, func(doc *goes.Document) error {
 		newDocs := m.Transform(doc)
 		for _, newDoc := range newDocs {
 			newDoc.Index = m.ToIndex

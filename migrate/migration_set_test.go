@@ -106,6 +106,10 @@ var _ = Describe("MigrationSet", func() {
 			It("should point the alias to the initial index", func() {
 				Expect(conn.addAliasCalls.calls).To(Equal([][]interface{}{{"test", []string{"zero"}}}))
 			})
+
+			It("should not attempt to remove an alias", func() {
+				Expect(conn.removeAliasCalls.calls).To(BeEmpty())
+			})
 		})
 
 		Context("When there are two migrations and no existing indices", func() {
@@ -128,6 +132,10 @@ var _ = Describe("MigrationSet", func() {
 
 			It("should point the alias to the second index", func() {
 				Expect(conn.addAliasCalls.calls).To(Equal([][]interface{}{{"test", []string{"one"}}}))
+			})
+
+			It("should not attempt to remove an alias", func() {
+				Expect(conn.removeAliasCalls.calls).To(BeEmpty())
 			})
 		})
 
@@ -152,6 +160,10 @@ var _ = Describe("MigrationSet", func() {
 
 			It("should point the alias to the third index", func() {
 				Expect(conn.addAliasCalls.calls).To(Equal([][]interface{}{{"test", []string{"two"}}}))
+			})
+
+			It("should not attempt to remove an alias", func() {
+				Expect(conn.removeAliasCalls.calls).To(BeEmpty())
 			})
 		})
 

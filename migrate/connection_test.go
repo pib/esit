@@ -85,6 +85,10 @@ func (c *mockConnection) ForEach(query interface{}, indexList []string, typeList
 	return errOrNil(ret[1])
 }
 
+func (c *mockConnection) RefreshIndex(name string) (*goes.Response, error) {
+	return &goes.Response{}, nil
+}
+
 func errOrNil(err interface{}) error {
 	if err == nil {
 		return nil

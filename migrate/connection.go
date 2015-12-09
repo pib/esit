@@ -15,6 +15,7 @@ type Connection interface {
 	ForEach(query interface{}, indexList []string, typeList []string, cb func(*goes.Document) error) error
 	RemoveAlias(alias string, indices []string) (*goes.Response, error)
 	AddAlias(alias string, indices []string) (*goes.Response, error)
+	RefreshIndex(index string) (*goes.Response, error)
 }
 
 // ESConnection extends goes.Connection with ForEach method.
