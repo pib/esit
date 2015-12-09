@@ -79,7 +79,7 @@ var _ = Describe("MigrationSet", func() {
 		BeforeEach(func() {
 			err = nil
 			conn = &mockConnection{}
-			migrationSet = &MigrationSet{}
+			migrationSet = &MigrationSet{IndexAlias: "test"}
 		})
 
 		JustBeforeEach(func() {
@@ -102,6 +102,10 @@ var _ = Describe("MigrationSet", func() {
 			It("should create the initial index", func() {
 				Expect(conn.createIndexCalls.calls).To(Equal([][]interface{}{{"zero", settings[0]}}))
 			})
+
+			It("should point the alias to the initial index", func() {
+				Expect(conn.addAliasCalls.calls).To(Equal([][]interface{}{{"test", []string{"zero"}}}))
+			})
 		})
 
 		Context("When there are two migrations and no existing indices", func() {
@@ -120,6 +124,10 @@ var _ = Describe("MigrationSet", func() {
 
 			It("should create the second index", func() {
 				Expect(conn.createIndexCalls.calls).To(Equal([][]interface{}{{"one", settings[1]}}))
+			})
+
+			It("should point the alias to the second index", func() {
+				Expect(conn.addAliasCalls.calls).To(Equal([][]interface{}{{"test", []string{"one"}}}))
 			})
 		})
 
@@ -140,6 +148,10 @@ var _ = Describe("MigrationSet", func() {
 
 			It("should create the third index", func() {
 				Expect(conn.createIndexCalls.calls).To(Equal([][]interface{}{{"two", settings[2]}}))
+			})
+
+			It("should point the alias to the third index", func() {
+				Expect(conn.addAliasCalls.calls).To(Equal([][]interface{}{{"test", []string{"two"}}}))
 			})
 		})
 
@@ -202,6 +214,14 @@ var _ = Describe("MigrationSet", func() {
 						"description": "About Thing Two Copy",
 					}}))
 			})
+
+			It("should point the alias to the third index", func() {
+				Expect(conn.addAliasCalls.calls).To(Equal([][]interface{}{{"test", []string{"two"}}}))
+			})
+
+			It("should remove the alias to the first index", func() {
+				Expect(conn.removeAliasCalls.calls).To(Equal([][]interface{}{{"test", []string{"zero"}}}))
+			})
 		})
 
 		Context("When the first and last of three indices exist", func() {
@@ -246,6 +266,10 @@ var _ = Describe("MigrationSet", func() {
 
 			It("should not index any docs", func() {
 				Expect(conn.indexCalls.calls).To(BeEmpty())
+			})
+
+			It("should not add an alias", func() {
+				Expect(conn.addAliasCalls.calls).To(BeEmpty())
 			})
 		})
 

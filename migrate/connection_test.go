@@ -27,6 +27,8 @@ type mockConnection struct {
 	createIndexCalls   mockCalls
 	indexCalls         mockCalls
 	forEachCalls       mockCalls
+	addAliasCalls      mockCalls
+	removeAliasCalls   mockCalls
 	customIndicesExist func(indices []string) (bool, error)
 }
 
@@ -49,6 +51,24 @@ func (c *mockConnection) CreateIndex(index string, settings interface{}) (*goes.
 
 func (c *mockConnection) Index(d goes.Document, extraArgs url.Values) (*goes.Response, error) {
 	ret := c.indexCalls.call(d, extraArgs)
+	return ret[0].(*goes.Response), errOrNil(ret[1])
+}
+
+func (c *mockConnection) AddAlias(alias string, indices []string) (*goes.Response, error) {
+	if len(c.addAliasCalls.returns) == 0 {
+		c.addAliasCalls.calls = append(c.addAliasCalls.calls, []interface{}{alias, indices})
+		return &goes.Response{}, nil
+	}
+	ret := c.addAliasCalls.call(alias, indices)
+	return ret[0].(*goes.Response), errOrNil(ret[1])
+}
+
+func (c *mockConnection) RemoveAlias(alias string, indices []string) (*goes.Response, error) {
+	if len(c.removeAliasCalls.returns) == 0 {
+		c.removeAliasCalls.calls = append(c.removeAliasCalls.calls, []interface{}{alias, indices})
+		return &goes.Response{}, nil
+	}
+	ret := c.removeAliasCalls.call(alias, indices)
 	return ret[0].(*goes.Response), errOrNil(ret[1])
 }
 

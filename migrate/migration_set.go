@@ -34,5 +34,15 @@ func (s *MigrationSet) Run(c Connection) error {
 	}
 
 	composite := compositeMigration(s.Migrations[firstToRun:])
-	return Migrate(c, composite)
+	if err := Migrate(c, composite); err != nil {
+		return err
+	}
+
+	if _, err := c.AddAlias(s.IndexAlias, []string{composite.ToIndex}); err != nil {
+		return err
+	}
+	if _, err := c.RemoveAlias(s.IndexAlias, []string{composite.FromIndex}); err != nil {
+		return err
+	}
+	return nil
 }

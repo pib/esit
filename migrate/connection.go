@@ -13,11 +13,13 @@ type Connection interface {
 	CreateIndex(string, interface{}) (*goes.Response, error)
 	Index(goes.Document, url.Values) (*goes.Response, error)
 	ForEach(query interface{}, indexList []string, typeList []string, cb func(*goes.Document) error) error
+	RemoveAlias(alias string, indices []string) (*goes.Response, error)
+	AddAlias(alias string, indices []string) (*goes.Response, error)
 }
 
 // ESConnection extends goes.Connection with ForEach method.
 type ESConnection struct {
-	goes.Connection
+	*goes.Connection
 	Timeout string
 	Size    int
 }
@@ -25,10 +27,11 @@ type ESConnection struct {
 var _ Connection = &ESConnection{}
 
 // NewESConnection creates a new ESConnection with default timeout and size.
-func NewESConnection() *ESConnection {
+func NewESConnection(host string, port string) *ESConnection {
 	return &ESConnection{
-		Timeout: "1m",
-		Size:    100,
+		Connection: goes.NewConnection(host, port),
+		Timeout:    "1m",
+		Size:       100,
 	}
 }
 
